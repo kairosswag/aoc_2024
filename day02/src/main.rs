@@ -16,7 +16,6 @@ where
 {
     let mut count_p1 = 0;
     let mut count_p2 = 0;
-    let mut lineno = 1usize;
     for line in reader.lines() {
         let res: Vec<i32> = line
             .expect("line parse failed")
@@ -45,17 +44,14 @@ where
         if skip_list.is_empty(){
             count_p1 += 1;
             count_p2 += 1;
-        } else if valid_p2(lineno, &res, ascending > 0, skip_list) {
+        } else if valid_p2(&res, ascending > 0, skip_list) {
             count_p2 += 1;
-        } else {
-           // println!("{lineno} unsafe");
         }
-        lineno += 1;
     }
     (count_p1, count_p2)
 }
 
-fn valid_p2(line: usize, list: &[i32], line_ascending: bool, skip_list: Vec<usize>) -> bool {
+fn valid_p2(list: &[i32], line_ascending: bool, skip_list: Vec<usize>) -> bool {
     if list.len() == 3 {
         panic!("wut")
     }

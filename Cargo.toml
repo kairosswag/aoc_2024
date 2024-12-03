@@ -3,5 +3,5 @@ resolver = "2"
 
 members = [ 
     "aoc_util",
-    "day01", "day02",
+    "day01", "day02", "day03",
 ]

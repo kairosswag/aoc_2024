@@ -2,5 +2,14 @@
 name = "day04"
 version = "0.1.0"
 edition = "2021"
+resolver = "2"
 
 [dependencies]
+aoc_util = { path = "../aoc_util"}
+
+[dev-dependencies]
+criterion = { version = "0.4", features = ["html_reports"] }
+
+[[bench]]
+name = "day04_benchmark"
+harness = false

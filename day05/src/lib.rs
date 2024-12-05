@@ -67,6 +67,9 @@ fn calc_specialized_total_order(po_rules: &HashMap<u8, Vec<u8>>, update_line: &V
     while !pages.is_empty() {
         let remove = pages.iter().find(|val| *val.1 == 0).expect("whelp, that didn't work");
         let removed: u8 = **remove.0;
+        if curr == len / 2 {
+            return removed as usize;
+        }
         pages.remove(&removed);
         if let Some(followers) = po_rules.get(&removed) {
             for follower in followers {
@@ -76,11 +79,7 @@ fn calc_specialized_total_order(po_rules: &HashMap<u8, Vec<u8>>, update_line: &V
             }
         }
 
-        if curr == len / 2 {
-            return removed as usize;
-        } else {
-            curr += 1;
-        }
+        curr += 1;
     }
     unreachable!()
 

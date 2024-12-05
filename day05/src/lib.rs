@@ -44,39 +44,45 @@ where
         if valid {
             count_p1 += update[update.len() / 2] as usize;
         } else {
-            let mut forbidden_stack = vec![HashSet::new()];
-            let mut maybe_ordered = Vec::new();
-            for page in update {
-                flansch(&mut forbidden_stack, page, &mut maybe_ordered, &po_rules);
-            }
-            count_p2 += maybe_ordered[maybe_ordered.len() / 2] as usize
+            count_p2 += calc_specialized_total_order(&po_rules, &update);
         }
     }
     (count_p1, count_p2)
 }
 
-fn flansch(forbidden_stack: &mut Vec<HashSet<u8>>, page: &u8, maybe_ordered: &mut Vec<u8>, po_rules: &HashMap<u8, Vec<u8>>) {
-    // println!("Curr page: {page}");
-    let mut helper_stack = Vec::new();
-    while forbidden_stack.last().unwrap().contains(page) {
-        forbidden_stack.pop();
-        let minus = maybe_ordered.pop().unwrap();
-        helper_stack.push(minus);
-        // println!("{:?} - {minus}", maybe_ordered);
-    }
-    maybe_ordered.push(*page);
-    let mut new_forbidden = forbidden_stack.last().unwrap().clone();
-    if let Some(followers) = po_rules.get(page) {
-        for follower in followers {
-            new_forbidden.insert(*follower);
+fn calc_specialized_total_order(po_rules: &HashMap<u8, Vec<u8>>, update_line: &Vec<u8>) -> usize {
+    let mut pages: HashMap<&u8, usize> = update_line.iter().map(|val| (val, 0)).collect();
+    for page in update_line {
+        if let Some(followers) = po_rules.get(page) {
+            for follower in followers {
+                if let Some(val) = pages.get_mut(follower) {
+                    *val += 1;
+                }
+            }
         }
     }
-    forbidden_stack.push(new_forbidden);
-    // println!("Helper: {:?}", helper_stack);
-    for idx in 0..helper_stack.len() {
-        flansch(forbidden_stack, &helper_stack[idx], maybe_ordered, po_rules);
-        // println!("{:?} + {val}", maybe_ordered);
+
+    let len = update_line.len();
+    let mut curr = 0;
+    while !pages.is_empty() {
+        let remove = pages.iter().find(|val| *val.1 == 0).expect("whelp, that didn't work");
+        let removed: u8 = **remove.0;
+        pages.remove(&removed);
+        if let Some(followers) = po_rules.get(&removed) {
+            for follower in followers {
+                if let Some(val) = pages.get_mut(follower) {
+                    *val -= 1;
+                }
+            }
+        }
+
+        if curr == len / 2 {
+            return removed as usize;
+        } else {
+            curr += 1;
+        }
     }
-    // println!("End: {:?}", maybe_ordered);
+    unreachable!()
+
 }
 

@@ -3,5 +3,11 @@ resolver = "2"
 
 members = [ 
     "aoc_util",
-    "day01", "day02", "day03", "day04",
+    "day01", "day02", "day03", "day04", "day05",
 ]
+
+[profile.release]
+debug = true
+
+[profile.bench]
+debug = true

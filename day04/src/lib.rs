@@ -6,10 +6,10 @@ where
     R: BufRead,
 {
     let mut read = usize::MAX;
-    let mut grid = Vec::new();
+    let mut grid = Vec::with_capacity(256);
 
     while read > 0 {
-        let mut line = Vec::new();
+        let mut line = Vec::with_capacity(256);
         read = reader.read_until(b'\n', &mut line).unwrap();
         grid.push(line);
     }
@@ -32,9 +32,9 @@ where
 fn find_matches_p1(grid: &Vec<Vec<u8>>, hor: usize, vert: usize) -> usize {
     let mut direction_found = 0;
     for direction in CardinalDirection::iter() {
-        if let Some(b'M') = get_in_bounds(grid, hor, vert, *direction, 1) {
-            if let Some(b'A') = get_in_bounds(grid, hor, vert, *direction, 2) {
-                if let Some(b'S') = get_in_bounds(grid, hor, vert, *direction, 3) {
+        if let Some(b'S') = get_in_bounds(grid, hor, vert, *direction, 3) {
+            if b'A' == get_confident(grid, hor, vert, *direction, 2) {
+                if b'M' == get_confident(grid, hor, vert, *direction, 1) {
                     direction_found += 1;
                 }
             }
@@ -42,6 +42,20 @@ fn find_matches_p1(grid: &Vec<Vec<u8>>, hor: usize, vert: usize) -> usize {
     }
 
     direction_found
+}
+
+fn get_confident(
+    grid: &Vec<Vec<u8>>,
+    hor: usize,
+    vert: usize,
+    direction: CardinalDirection,
+    steps: i32,
+) -> u8 {
+    let (hor_vc, ver_vc) = direction.direction_vec();
+    let ver_idx = vert as i32 + ver_vc * steps;
+    let line = &grid[ver_idx as usize];
+    let hor_idx = hor as i32 + hor_vc * steps;
+    line[hor_idx as usize]
 }
 
 fn get_in_bounds<T>(
@@ -71,7 +85,10 @@ where
         return None;
     }
     let hor_idx = hor_idx as usize;
-    line.get(hor_idx)
+    if hor_idx >= line.len() {
+        return None;
+    }
+    Some(&line[hor_idx])
 }
 
 fn find_matches_p2(grid: &Vec<Vec<u8>>, hor: usize, vert: usize) -> usize {

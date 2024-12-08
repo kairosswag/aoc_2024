@@ -56,6 +56,9 @@ impl Equation {
         if next_numbers_str.len() > result_str.len() {
             return false;
         }
+        if next_numbers_str == result_str {
+            return true;
+        }
         let start_idx = result_str.len() - next_numbers_str.len();
         if result_str[start_idx..] == next_numbers_str {
             // println!("ogogo, testing {} gainst {:?} now", result_str[..start_idx].parse::<usize>().unwrap(), &remainder[..remainder.len() - 1]);

@@ -41,30 +41,18 @@ where
     }
     max_ver += 1;
 
-    println!("max_ver {}, max_hor {}", max_ver, max_hor);
+    let (anti_nodes, resonant_antinodes) = calc_antinodes(&nodes, max_ver as isize, max_hor as isize);
 
-    let anti_nodes = calc_antinodes(&nodes, max_ver as isize, max_hor as isize);
-
-    for ver in 0..max_ver {
-        for hor in 0..max_hor {
-            if anti_nodes.get(&Coordinate::from(ver as isize, hor as isize)).is_some() {
-                print!("#")
-            } else {
-                print!(".")
-            }
-        }
-        print!("\n");
-    }
-
-    (anti_nodes.len(), 5)
+    (anti_nodes.len(), resonant_antinodes.len())
 }
 
 fn calc_antinodes(
     nodes: &HashMap<char, HashSet<Coordinate>>,
     max_ver: isize,
     max_hor: isize,
-) -> HashSet<Coordinate> {
+) -> (HashSet<Coordinate>, HashSet<Coordinate>) {
     let mut antinodes = HashSet::new();
+    let mut resonant_antinodes = HashSet::new();
     for node in nodes.keys() {
         let coordinates = nodes.get(node).unwrap();
         for combination in coordinates.iter().combinations(2) {
@@ -73,25 +61,32 @@ fn calc_antinodes(
             let delta = second - first;
             let anti_1 = second + &delta;
             let anti_2 = first - &delta;
-            if *node == 'A' {
-                println!("returning values for a: {:?} {:?}", anti_1, anti_2);
-            }
-            if anti_1.ver >= 0 && anti_1.ver < max_ver && anti_1.hor >= 0 && anti_1.hor < max_hor {
-                if *node == 'A' {
-                    println!("Insertinging anti_1: {:?}", anti_1);
-                }
+            if is_in_bounds(&anti_1, max_ver, max_hor) {
                 antinodes.insert(anti_1);
             }
-            if anti_2.ver >= 0 && anti_2.ver < max_ver && anti_2.hor >= 0 && anti_2.hor < max_hor {
-                if *node == 'A' {
-                    println!("Insertinging anti_2: {:?}", anti_2);
-                }
+            if is_in_bounds(&anti_2, max_ver, max_hor) {
                 antinodes.insert(anti_2);
+            }
+
+            let mut curr_node = *first;
+            while is_in_bounds(&curr_node, max_ver, max_hor) {
+                resonant_antinodes.insert(curr_node);
+                curr_node = &curr_node + &delta;
+            }
+
+            curr_node = first - &delta;
+            while is_in_bounds(&curr_node, max_ver, max_hor) {
+                resonant_antinodes.insert(curr_node);
+                curr_node = &curr_node - &delta;
             }
         }
     }
 
-    antinodes
+    (antinodes, resonant_antinodes)
+}
+
+fn is_in_bounds(coordinate: &Coordinate, max_ver: isize, max_hor: isize) -> bool {
+    coordinate.ver >= 0 && coordinate.ver < max_ver && coordinate.hor >= 0 && coordinate.hor < max_hor
 }
 
 impl Sub for &Coordinate {

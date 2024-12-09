@@ -184,6 +184,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
 
 [[package]]
+name = "day00"
+version = "0.1.0"
+
+[[package]]
 name = "day01"
 version = "0.1.0"
 dependencies = [
@@ -242,6 +246,16 @@ dependencies = [
 
 [[package]]
 name = "day08"
+version = "0.1.0"
+dependencies = [
+ "aoc_util",
+ "criterion",
+ "hashbrown 0.15.2",
+ "itertools 0.13.0",
+]
+
+[[package]]
+name = "day09"
 version = "0.1.0"
 dependencies = [
  "aoc_util",

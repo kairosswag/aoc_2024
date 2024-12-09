@@ -48,7 +48,7 @@ fn solve_p2(buf: &[u8], read: usize) -> usize {
 
     let mut res_p2 = 0;
     let mut gen_idx = 0;
-    for index in 0..read - 1 {
+    for index in 0..read {
         if index % 2 == 0 {
             let value = buf[index] - b'0';
             if !moved.contains(&(index/2)) {
@@ -57,8 +57,6 @@ fn solve_p2(buf: &[u8], read: usize) -> usize {
                     gen_idx += 1;
                 }
             } else {
-                for _ in 0..value {
-                }
                 gen_idx += value as usize;
             }
         } else {

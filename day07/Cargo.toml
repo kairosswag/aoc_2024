@@ -15,5 +15,5 @@ hashbrown = "0.15.2"
 criterion = { version = "0.4", features = ["html_reports"] }
 
 [[bench]]
-name = "day05_benchmark"
+name = "day07_benchmark"
 harness = false

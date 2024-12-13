@@ -16,7 +16,7 @@ where
 
     let (result_p2, cache) = solve_for_x(initial.clone(), HashMap::new(), 0);
     let input = initial.iter().map(|val| (val.0, 50)).collect();
-    let (result_p1, _) = solve_for_x(input, cache, 50);
+    let (result_p1, cache) = solve_for_x(input, cache, 50);
 
     (result_p1, result_p2)
 }
@@ -36,12 +36,16 @@ fn solve_for_x(mut input: Vec<(usize, usize)>, mut cache: HashMap<(usize, usize)
             input.pop();
             if stone.1 == key_stone {
                 result += value;
+            } else {
+                let len = stack.len();
+                stack[len - 1] += value;
             }
             curr_layer -= 1;
             continue;
         }
         if stone.1 == 75 {
-            stack.iter_mut().for_each(|val| *val += 1);
+            let len = stack.len();
+            stack[len - 1] += 1;
             cache.insert(stone, 1);
             input.pop();
             continue;
@@ -55,8 +59,8 @@ fn solve_for_x(mut input: Vec<(usize, usize)>, mut cache: HashMap<(usize, usize)
         let child_stones = put_resulting_stones(&stone, current);
         for child_stone in &child_stones {
             if let Some(cached) = cache.get(child_stone) {
-                // do nothing
-                stack.iter_mut().for_each(|val| *val += cached);
+                let len = stack.len();
+                stack[len - 1] += cached;
             } else {
                 input.push(child_stone.clone());
             }

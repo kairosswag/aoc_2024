@@ -16,7 +16,7 @@ where
 
     let (result_p2, cache) = solve_for_x(initial.clone(), HashMap::new(), 0);
     let input = initial.iter().map(|val| (val.0, 50)).collect();
-    let (result_p1, cache) = solve_for_x(input, cache, 50);
+    let (result_p1, _cache) = solve_for_x(input, cache, 50);
 
     (result_p1, result_p2)
 }
@@ -50,9 +50,6 @@ fn solve_for_x(mut input: Vec<(usize, usize)>, mut cache: HashMap<(usize, usize)
             input.pop();
             continue;
         }
-        if stone.1 > 75 {
-            panic!("wut?");
-        }
         stack.push(0);
         current.clear();
         curr_layer += 1;
@@ -80,9 +77,9 @@ fn put_resulting_stones(
     } else {
         let digits = number_is_even(stone.0);
         if digits % 2 == 0 {
-            let number_str = format!("{}", stone.0);
-            let first = number_str[..digits / 2].parse().unwrap();
-            let second = number_str[digits / 2..].parse().unwrap();
+            let pivot = 10usize.pow((digits / 2) as u32);
+            let first = stone.0 / pivot;
+            let second = stone.0 % pivot;
             current.push((first, next_layer));
             current.push((second, next_layer));
         } else {
@@ -126,4 +123,14 @@ fn number_is_even(number: usize) -> usize {
         println!("number: {} ", number);
         panic!("Did not thing this would go that high");
     }
+}
+
+#[test]
+fn test_format_stuff() {
+    let number = 123456usize;
+    let length = 6;
+    let pivot = 10usize.pow(length / 2);
+    let lower = number / pivot;
+    let upper = number % pivot;
+    println!("{lower}, {upper}")
 }

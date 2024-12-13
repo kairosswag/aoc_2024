@@ -23,7 +23,8 @@ where
 
 fn solve_for_x(mut input: Vec<(usize, usize)>, mut cache: HashMap<(usize, usize), usize>, key_stone: usize) -> (usize, HashMap<(usize, usize), usize>) {
 
-    let mut stack = Vec::new();
+    let mut stackx = [0; 76];
+    let mut stack_pointer = 0;
     let mut result = 0;
     // always get the first one and go down
     let mut curr_layer = key_stone;
@@ -31,33 +32,32 @@ fn solve_for_x(mut input: Vec<(usize, usize)>, mut cache: HashMap<(usize, usize)
     while let Some(stone) = input.last() {
         let stone = stone.clone();
         if stone.1 != curr_layer {
-            let value = stack.pop().unwrap();
+            let value = stackx[stack_pointer];
+            stack_pointer -= 1;
             cache.insert(stone, value);
             input.pop();
             if stone.1 == key_stone {
                 result += value;
             } else {
-                let len = stack.len();
-                stack[len - 1] += value;
+                stackx[stack_pointer] += value;
             }
             curr_layer -= 1;
             continue;
         }
         if stone.1 == 75 {
-            let len = stack.len();
-            stack[len - 1] += 1;
+            stackx[stack_pointer] += 1;
             cache.insert(stone, 1);
             input.pop();
             continue;
         }
-        stack.push(0);
+        stack_pointer += 1;
+        stackx[stack_pointer] = 0;
         current.clear();
         curr_layer += 1;
         let child_stones = put_resulting_stones(&stone, current);
         for child_stone in &child_stones {
             if let Some(cached) = cache.get(child_stone) {
-                let len = stack.len();
-                stack[len - 1] += cached;
+                stackx[stack_pointer] += cached;
             } else {
                 input.push(child_stone.clone());
             }

@@ -4,9 +4,6 @@ version = "0.1.0"
 edition = "2021"
 resolver = "2"
 
-[profile.bench]
-debug = true
-
 [dependencies]
 aoc_util = { path = "../aoc_util"}
 hashbrown = "0.15.2"

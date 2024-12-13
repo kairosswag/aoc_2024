@@ -1,11 +1,11 @@
 use hashbrown::HashMap;
 use std::io::BufRead;
 
-pub fn run<R>(mut reader: R) -> (usize, usize)
+pub fn run<R>(reader: R) -> (usize, usize)
 where
     R: BufRead,
 {
-    let mut initial: Vec<_> = reader
+    let initial: Vec<_> = reader
         .lines()
         .next()
         .unwrap()
@@ -14,69 +14,28 @@ where
         .map(|val| (val.parse::<usize>().unwrap(), 0))
         .collect();
 
-    let mut input_p1 = initial.clone();
-    let mut cache = HashMap::new();
+    let (result_p2, cache) = solve_for_x(initial.clone(), HashMap::new(), 0);
+    let input = initial.iter().map(|val| (val.0, 50)).collect();
+    let (result_p1, _) = solve_for_x(input, cache, 50);
+
+    (result_p1, result_p2)
+}
+
+fn solve_for_x(mut input: Vec<(usize, usize)>, mut cache: HashMap<(usize, usize), usize>, key_stone: usize) -> (usize, HashMap<(usize, usize), usize>) {
 
     let mut stack = Vec::new();
-
-    let mut result_p1 = 0;
+    let mut result = 0;
     // always get the first one and go down
-    let mut curr_layer = 0;
+    let mut curr_layer = key_stone;
     let mut current = Vec::with_capacity(2);
-    while let Some(stone) = input_p1.last() {
+    while let Some(stone) = input.last() {
         let stone = stone.clone();
         if stone.1 != curr_layer {
             let value = stack.pop().unwrap();
             cache.insert(stone, value);
-            input_p1.pop();
-            if stone.1 == 0 {
-                result_p1 += value;
-            }
-            curr_layer -= 1;
-            continue;
-        }
-        if stone.1 == 25 {
-            stack.iter_mut().for_each(|val| *val += 1);
-            cache.insert(stone, 1);
-            input_p1.pop();
-            continue;
-        }
-        if stone.1 > 25 {
-            panic!("wut?");
-        }
-        stack.push(0);
-        current.clear();
-        curr_layer += 1;
-        let child_stones = put_resulting_stones(&stone, current);
-        for child_stone in &child_stones {
-            if let Some(cached) = cache.get(child_stone) {
-                // do nothing
-                stack.iter_mut().for_each(|val| *val += cached);
-            } else {
-                input_p1.push(child_stone.clone());
-            }
-        }
-        current = child_stones;
-    }
-
-    let mut input_p2 = initial.clone();
-
-    let mut cache = HashMap::new();
-
-    let mut stack = Vec::new();
-
-    let mut result_p2 = 0;
-    // always get the first one and go down
-    let mut curr_layer = 0;
-    let mut current = Vec::with_capacity(2);
-    while let Some(stone) = input_p2.last() {
-        let stone = stone.clone();
-        if stone.1 != curr_layer {
-            let value = stack.pop().unwrap();
-            cache.insert(stone, value);
-            input_p2.pop();
-            if stone.1 == 0 {
-                result_p2 += value;
+            input.pop();
+            if stone.1 == key_stone {
+                result += value;
             }
             curr_layer -= 1;
             continue;
@@ -84,7 +43,7 @@ where
         if stone.1 == 75 {
             stack.iter_mut().for_each(|val| *val += 1);
             cache.insert(stone, 1);
-            input_p2.pop();
+            input.pop();
             continue;
         }
         if stone.1 > 75 {
@@ -99,13 +58,12 @@ where
                 // do nothing
                 stack.iter_mut().for_each(|val| *val += cached);
             } else {
-                input_p2.push(child_stone.clone());
+                input.push(child_stone.clone());
             }
         }
         current = child_stones;
     }
-
-    (result_p1, result_p2)
+    (result, cache)
 }
 
 fn put_resulting_stones(

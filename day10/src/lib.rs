@@ -1,5 +1,6 @@
 use hashbrown::HashSet;
 use std::io::BufRead;
+use itertools::Itertools;
 
 pub fn run<R>(mut reader: R) -> (usize, usize)
 where
@@ -24,32 +25,7 @@ where
         }
     }
 
-    let mut count = 0;
-    for init in &initial {
-        let mut curr_round = HashSet::new();
-        curr_round.insert(*init);
-        let mut next_round = HashSet::new();
-        let mut curr_val = b'0';
-        loop {
-            for (ver, hor) in &curr_round {
-                for (neighbor_ver, neighbor_hor) in
-                    valid_neighbors(*ver, *hor, curr_val, &buf, width, height)
-                {
-                    next_round.insert((neighbor_ver, neighbor_hor));
-                }
-            }
-
-            if curr_val == b'8' {
-                count += next_round.len();
-                break;
-            } else {
-                curr_round = next_round;
-                next_round = HashSet::new();
-                curr_val += 1;
-            }
-        }
-    }
-
+    let mut count_p1 = 0;
     let mut count_p2 = 0;
     for init in &initial {
         let mut curr_round = Vec::new();
@@ -67,6 +43,7 @@ where
 
             if curr_val == b'8' {
                 count_p2 += next_round.len();
+                count_p1 += next_round.iter().map(|(a, b)| (*a, *b)).unique().count();
                 break;
             } else {
                 curr_round = next_round;
@@ -75,7 +52,7 @@ where
             }
         }
     }
-    (count, count_p2)
+    (count_p1, count_p2)
 }
 
 fn valid_neighbors(

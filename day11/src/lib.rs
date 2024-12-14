@@ -1,5 +1,6 @@
 use hashbrown::HashMap;
 use std::io::BufRead;
+use itertools::Itertools;
 
 pub fn run<R>(reader: R) -> (usize, usize)
 where
@@ -14,82 +15,43 @@ where
         .map(|val| (val.parse::<usize>().unwrap(), 0))
         .collect();
 
-    let (result_p2, cache) = solve_for_x(initial.clone(), HashMap::new(), 0);
-    let input = initial.iter().map(|val| (val.0, 50)).collect();
-    let (result_p1, _cache) = solve_for_x(input, cache, 50);
+    let (result_p1, result_p2) = solve_iterative(initial.clone());
 
     (result_p1, result_p2)
 }
 
-fn solve_for_x(mut input: Vec<(usize, usize)>, mut cache: HashMap<(usize, usize), usize>, key_stone: usize) -> (usize, HashMap<(usize, usize), usize>) {
+fn solve_iterative(input: Vec<(usize, usize)>) -> (usize, usize) {
+    let mut working = HashMap::from_iter(input.iter().map(|val| val.0).counts());
+    let mut next = HashMap::new();
 
-    let mut stackx = [0; 76];
-    let mut stack_pointer = 0;
-    let mut result = 0;
-    // always get the first one and go down
-    let mut curr_layer = key_stone;
-    let mut current = Vec::with_capacity(2);
-    while let Some(stone) = input.last() {
-        let stone = stone.clone();
-        if stone.1 != curr_layer {
-            let value = stackx[stack_pointer];
-            stack_pointer -= 1;
-            cache.insert(stone, value);
-            input.pop();
-            if stone.1 == key_stone {
-                result += value;
+    let mut res_1 = 0;
+    for blink in 0..75 {
+        for (stone_val, stone_count) in &working {
+            let (stone_val, stone_count) = (*stone_val, *stone_count);
+            if stone_val == 0 {
+                next.entry(1).and_modify(|curr_count| *curr_count += stone_count).or_insert(stone_count);
             } else {
-                stackx[stack_pointer] += value;
-            }
-            curr_layer -= 1;
-            continue;
-        }
-        if stone.1 == 75 {
-            stackx[stack_pointer] += 1;
-            cache.insert(stone, 1);
-            input.pop();
-            continue;
-        }
-        stack_pointer += 1;
-        stackx[stack_pointer] = 0;
-        current.clear();
-        curr_layer += 1;
-        let child_stones = put_resulting_stones(&stone, current);
-        for child_stone in &child_stones {
-            if let Some(cached) = cache.get(child_stone) {
-                stackx[stack_pointer] += cached;
-            } else {
-                input.push(child_stone.clone());
+                let digits = number_is_even(stone_val);
+                if digits % 2 == 0 {
+                    let pivot = 10usize.pow((digits / 2) as u32);
+                    let first = stone_val / pivot;
+                    let second = stone_val % pivot;
+                    next.entry(first).and_modify(|curr_count| *curr_count += stone_count).or_insert(stone_count);
+                    next.entry(second).and_modify(|curr_count| *curr_count += stone_count).or_insert(stone_count);
+                } else {
+                    next.entry(stone_val * 2024).and_modify(|curr_count| *curr_count += stone_count).or_insert(stone_count);
+                }
             }
         }
-        current = child_stones;
-    }
-    (result, cache)
-}
-
-fn put_resulting_stones(
-    stone: &(usize, usize),
-    mut current: Vec<(usize, usize)>,
-) -> Vec<(usize, usize)> {
-    let next_layer = stone.1 + 1;
-    if stone.0 == 0 {
-        current.push((1, next_layer));
-    } else {
-        let digits = number_is_even(stone.0);
-        if digits % 2 == 0 {
-            let pivot = 10usize.pow((digits / 2) as u32);
-            let first = stone.0 / pivot;
-            let second = stone.0 % pivot;
-            current.push((first, next_layer));
-            current.push((second, next_layer));
-        } else {
-            current.push((stone.0 * 2024, next_layer));
+        if blink == 24 {
+            res_1 = next.values().sum()
         }
+        working = next;
+        next = HashMap::new();
     }
 
-    current
+    (res_1, working.values().sum())
 }
-
 fn number_is_even(number: usize) -> usize {
     if number < 10 {
         1
@@ -132,5 +94,5 @@ fn test_format_stuff() {
     let pivot = 10usize.pow(length / 2);
     let lower = number / pivot;
     let upper = number % pivot;
-    println!("{lower}, {upper}")
+    println!("{lower}, {upper}");
 }

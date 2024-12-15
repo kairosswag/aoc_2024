@@ -188,7 +188,7 @@ fn wide_boxes_to_move(
 
     while !push_layer.is_empty() {
         for pos_at in push_layer {
-            let mut pos_at = pos_at;
+            let pos_at = pos_at;
             if let Some(warehouse_object) = warehouse_layout.get(&pos_at) {
                 if *warehouse_object == Block {
                     return None;

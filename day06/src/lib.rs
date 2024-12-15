@@ -142,7 +142,7 @@ fn move_guard(
     let mut already_blocked = HashSet::new();
     already_blocked.insert(guard_pos);
     let mut counter = 0;
-    let mut iteration = 0;
+    let iteration = 0;
     loop {
         // println!(
         //     "guard ver, guard hor {:?}, towards {guard_direction:?}",

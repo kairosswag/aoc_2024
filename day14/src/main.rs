@@ -7,13 +7,3 @@ pub fn main() {
     println!("Part 1: {}", p1);
     println!("Part 2: {}", p2);
 }
-
-#[cfg(test)]
-mod tests_day_14 {
-    use crate::run;
-    #[test]
-    fn test() {
-        let test_iput = "<fillme>";
-        assert_eq!((5, 5), run(test_iput.as_bytes()));
-    }
-}

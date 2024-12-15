@@ -34,11 +34,11 @@ where
                 valid = false;
                 break;
             } else {
-                if let Some(followers) = po_rules.get(page) {
+                match po_rules.get(page) { Some(followers) => {
                     for follower in followers {
                         forbidden.insert(follower);
                     }
-                }
+                } _ => {}}
             }
         }
         if valid {
@@ -55,9 +55,9 @@ fn calc_specialized_total_order(po_rules: &HashMap<u8, Vec<u8>>, update_line: &V
     for page in update_line {
         if let Some(followers) = po_rules.get(page) {
             for follower in followers {
-                if let Some(val) = pages.get_mut(follower) {
+                match pages.get_mut(follower) { Some(val) => {
                     *val += 1;
-                }
+                } _ => {}}
             }
         }
     }
@@ -73,9 +73,9 @@ fn calc_specialized_total_order(po_rules: &HashMap<u8, Vec<u8>>, update_line: &V
         pages.remove(&removed);
         if let Some(followers) = po_rules.get(&removed) {
             for follower in followers {
-                if let Some(val) = pages.get_mut(follower) {
+                match pages.get_mut(follower) { Some(val) => {
                     *val -= 1;
-                }
+                } _ => {}}
             }
         }
 

@@ -1,0 +1,18 @@
+[package]
+name = "day16"
+version = "0.1.0"
+edition = "2024"
+resolver = "2"
+
+[profile.bench]
+debug = true
+
+[dependencies]
+hashbrown = "0.15.2"
+
+[dev-dependencies]
+criterion = { version = "0.4", features = ["html_reports"] }
+
+[[bench]]
+name = "day16_benchmark"
+harness = false

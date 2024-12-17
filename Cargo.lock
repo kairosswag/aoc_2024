@@ -317,6 +317,7 @@ dependencies = [
  "aoc_util",
  "criterion",
  "hashbrown 0.15.2",
+ "itertools 0.10.5",
 ]
 
 [[package]]

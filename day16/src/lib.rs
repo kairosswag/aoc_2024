@@ -1,5 +1,6 @@
 use crate::Facing::{Horizontal, Vertical};
 use hashbrown::{HashMap, HashSet};
+use std::collections::BTreeSet;
 use std::io::BufRead;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
@@ -20,10 +21,33 @@ enum Facing {
     Vertical,
 }
 
-#[derive(Debug, Hash, Eq, PartialEq, Clone)]
+#[derive(Debug, Hash, Eq, PartialEq, Clone, PartialOrd, Ord)]
 struct MazeSpot {
     pub position: Coordinate,
     pub facing: Facing,
+}
+
+struct MazeMap {
+    hor_maze: Vec<u32>,
+    ver_maze: Vec<u32>,
+    width: usize,
+}
+
+impl MazeMap {
+    fn new(hor_maze: Vec<u32>, ver_maze: Vec<u32>, width: usize) -> MazeMap {
+        MazeMap {
+            hor_maze,
+            ver_maze,
+            width,
+        }
+    }
+
+    fn get_mut(&mut self, spot: &MazeSpot) -> &mut u32 {
+        match spot.facing {
+            Horizontal => &mut self.hor_maze[spot.position.y * self.width + spot.position.x],
+            Vertical => &mut self.ver_maze[spot.position.y * self.width + spot.position.x],
+        }
+    }
 }
 
 impl MazeSpot {
@@ -34,7 +58,7 @@ impl MazeSpot {
         }
     }
 
-    fn get_moves(&self) -> Vec<(MazeSpot, usize)> {
+    fn get_moves(&self) -> Vec<(MazeSpot, u32)> {
         let x_pos = self.position.x;
         let y_pos = self.position.y;
         let heading = self.facing;
@@ -55,31 +79,36 @@ impl MazeSpot {
 
         moves
     }
+
 }
 
 pub fn run<R>(reader: R) -> (usize, usize)
 where
     R: BufRead,
 {
-    let mut reindeer_maze = HashMap::new();
+    let mut horizontal_maze = vec![u32::MAX; 141 * 141];
+    let mut vertical_maze = vec![u32::MAX; 141 * 141];
     let mut start = None;
     let mut end = None;
+    let mut width = 0;
     for (y_val, line) in reader.lines().enumerate() {
         let line = line.unwrap();
+        width = line.len();
         for (x_val, ch) in line.chars().enumerate() {
             match ch {
                 '.' => {
-                    reindeer_maze.insert(MazeSpot::new(x_val, y_val, Horizontal), usize::MAX);
-                    reindeer_maze.insert(MazeSpot::new(x_val, y_val, Vertical), usize::MAX);
+                    horizontal_maze[y_val * width + x_val] = u32::MAX - 1;
+                    vertical_maze[y_val * width + x_val] = u32::MAX - 1;
                 }
                 'S' => {
                     start = Some(MazeSpot::new(x_val, y_val, Horizontal));
-                    reindeer_maze.insert(MazeSpot::new(x_val, y_val, Vertical), usize::MAX);
+                    horizontal_maze[y_val * width + x_val] = 0;
+                    vertical_maze[y_val * width + x_val] = u32::MAX - 1;
                 }
                 'E' => {
                     end = Some(Coordinate::new(x_val, y_val));
-                    reindeer_maze.insert(MazeSpot::new(x_val, y_val, Horizontal), usize::MAX);
-                    reindeer_maze.insert(MazeSpot::new(x_val, y_val, Vertical), usize::MAX);
+                    horizontal_maze[y_val * width + x_val] = u32::MAX - 1;
+                    vertical_maze[y_val * width + x_val] = u32::MAX - 1;
                 }
                 _ => (),
             }
@@ -88,7 +117,8 @@ where
 
     let start = start.unwrap();
     let end = end.unwrap();
-    let (res_p1, predecessors) = determine_cost(start, end, &mut reindeer_maze);
+    let maze = MazeMap::new(horizontal_maze, vertical_maze, width);
+    let (res_p1, predecessors) = determine_cost(start, end, maze);
 
     let mut in_path = HashSet::new();
     let mut waiting = Vec::new();
@@ -113,46 +143,34 @@ where
 fn determine_cost(
     start: MazeSpot,
     end: Coordinate,
-    reindeer_maze: &mut HashMap<MazeSpot, usize>,
-) -> (usize, HashMap<MazeSpot, Vec<MazeSpot>>) {
-    reindeer_maze.insert(
-        MazeSpot::new(start.position.x, start.position.y, Vertical),
-        usize::MAX,
-    );
-    let mut visited = HashSet::new();
+    mut maze: MazeMap,
+) -> (u32, HashMap<MazeSpot, Vec<MazeSpot>>) {
     let mut predecessors = HashMap::new();
-    reindeer_maze.insert(start, 0);
+    let mut min_heap = BTreeSet::new();
+    min_heap.insert((0, start));
     loop {
-        let spot = {
-            let val = reindeer_maze.iter().min_by_key(|(_, cost)| *cost);
-            let (spot, cost) = val.unwrap();
-            if *cost == usize::MAX {
-                unreachable!("found nothing :/");
-            }
-            if spot.position == end {
-                return (*cost, predecessors);
-            }
-            visited.insert(spot.clone());
-            spot.clone()
-        };
+        let (cost, spot) = min_heap.pop_first().unwrap();
 
-        let cost = reindeer_maze.remove(&spot).unwrap();
+        if cost == u32::MAX {
+            unreachable!("found nothing :/");
+        }
+        if spot.position == end {
+            return (cost, predecessors);
+        }
 
         for (potential_move, move_cost) in spot.get_moves() {
-            if visited.contains(&potential_move) {
-                continue;
-            }
-            if let Some(curr_dist) = reindeer_maze.get_mut(&potential_move) {
+            let curr_dist = maze.get_mut(&potential_move);
+            if *curr_dist != u32::MAX {
                 if *curr_dist > cost + move_cost {
+                    min_heap.remove(&(*curr_dist, potential_move.clone()));
                     *curr_dist = cost + move_cost;
-
-                    if potential_move.position == end {
-                        println!("adding end to followers {:?}, {potential_move:?}", spot.clone());
-                    }
+                    min_heap.insert((*curr_dist, potential_move.clone()));
                     predecessors.insert(potential_move, vec![spot.clone()]);
-
                 } else if *curr_dist == cost + move_cost {
-                    predecessors.get_mut(&potential_move).unwrap().push(spot.clone());
+                    predecessors
+                        .get_mut(&potential_move)
+                        .unwrap()
+                        .push(spot.clone());
                 }
             }
         }

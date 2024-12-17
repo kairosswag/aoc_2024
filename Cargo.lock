@@ -314,9 +314,7 @@ dependencies = [
 name = "day17"
 version = "0.1.0"
 dependencies = [
- "aoc_util",
  "criterion",
- "hashbrown 0.15.2",
  "itertools 0.10.5",
 ]
 

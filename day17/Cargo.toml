@@ -8,8 +8,6 @@ resolver = "2"
 debug = true
 
 [dependencies]
-aoc_util = { path = "../aoc_util"}
-hashbrown = "0.15.2"
 itertools = "0.10.5"
 
 [dev-dependencies]

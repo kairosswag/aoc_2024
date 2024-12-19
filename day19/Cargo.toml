@@ -1,0 +1,20 @@
+[package]
+name = "day19"
+version = "0.1.0"
+edition = "2024"
+resolver = "2"
+
+[profile.bench]
+debug = true
+
+[dependencies]
+aoc_util = { path = "../aoc_util"}
+hashbrown = "0.15.2"
+regex = "1.11.1"
+
+[dev-dependencies]
+criterion = { version = "0.4", features = ["html_reports"] }
+
+[[bench]]
+name = "day19_benchmark"
+harness = false

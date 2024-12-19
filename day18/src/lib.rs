@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 use std::io::BufRead;
+use hashbrown::HashSet;
 
 const WIDTH: usize = 70usize;
 const HEIGHT: usize = 70usize;
@@ -20,44 +21,127 @@ where
     to_visit.insert((0, (0, 0)));
     let res_p1 = find_path(&walls, &mut costing, &mut to_visit).unwrap();
 
-    let res_p2 = loop {
-        let line = &lines.next().unwrap().unwrap();
-        let (x, y) = get_xy(&line);
-        walls[to_coord(x, y)] = true;
-        let threshold = costing[to_coord(x, y)];
-        if threshold == usize::MAX - 1 {
-            // threshold not in shortest path
-            continue;
-        }
-        costing[to_coord(x, y)] = usize::MAX - 1;
-        wipe_costing(&mut costing, threshold, &mut to_visit);
-        if let None = find_path(&walls, &mut costing, &mut to_visit) {
-            break format!("{},{}", x, y);
-        }
-    };
-
-    (res_p1, res_p2)
-}
-
-fn wipe_costing(costing: &mut [usize], threshold: usize, to_visit: &mut BTreeSet<(usize, (usize, usize))>) {
-    while let Some(option) = to_visit.last() {
-        if option.0 > threshold {
-            to_visit.pop_last();
-        } else {
+    let mut following_walls = Vec::new();
+    loop {
+        let line = lines.next();
+        if line.is_none() {
             break;
         }
+        let line = line.unwrap().unwrap();
+        let (x, y) = get_xy(&line);
+        walls[to_coord(x, y)] = true;
+        following_walls.push((x, y));
     }
+
+    let mut colors = [0; (WIDTH + 1) * (HEIGHT + 1)];
+    flood_fill(&mut colors, WIDTH, HEIGHT, 5999, &walls);
+    flood_fill(&mut colors, 0, 0, 1, &walls);
+    let mut color = 2;
     for y in 0..=HEIGHT {
         for x in 0..=WIDTH {
-            let val = &mut costing[to_coord(x, y)];
-            if *val > threshold {
-                *val = usize::MAX - 1;
-            } else if *val == threshold {
-                *val = usize::MAX - 1;
-                to_visit.insert((threshold, (x, y)));
+            let coord = to_coord(x, y);
+            if !walls[coord] && colors[coord] == 0 {
+                flood_fill(&mut colors, x, y, color, &walls);
+                color += 1;
             }
         }
     }
+    let mut res_p2 = None;
+    let mut point_to = vec![u16::MAX; 6000];
+    while let Some((x, y)) = following_walls.pop() {
+        walls[to_coord(x, y)] = false;
+        let n_colors: Vec<u16> = fill_neighbors(x, y, &walls)
+                .iter()
+                .map(|(x, y)| colors[to_coord(*x, *y)]).collect();
+        let unified_color = if n_colors.is_empty() {
+            let new_color = color;
+            color += 1;
+            new_color
+        } else {
+            unify(n_colors, &mut point_to)
+        };
+        colors[to_coord(x, y)] = unified_color;
+        if start_end_unified(&point_to) {
+            res_p2 = Some(format!("{x},{y}"));
+            break;
+        }
+    }
+    let res_p2 = res_p2.unwrap();
+    (res_p1, res_p2)
+}
+
+fn start_end_unified(point_to: &Vec<u16>) -> bool {
+    let mut prev_pointee = 1;
+    let mut curr_pointee = point_to[1];
+    while curr_pointee != u16::MAX && prev_pointee != curr_pointee {
+        if curr_pointee == 5999 {
+            return true;
+        }
+        prev_pointee = curr_pointee;
+        curr_pointee = point_to[curr_pointee as usize];
+    }
+    false
+}
+
+fn unify(mut unify_set: Vec<u16>, point_to: &mut Vec<u16>) -> u16 {
+    let mut all_colors = Vec::new();
+
+    while let Some(color_base) = unify_set.pop() {
+        all_colors.push(color_base);
+        let pointing_to = point_to[color_base as usize];
+        if pointing_to != u16::MAX && pointing_to != color_base {
+            unify_set.push(pointing_to);
+        }
+    }
+
+    let max = all_colors.iter().max().unwrap().clone();
+    for color in all_colors {
+        point_to[color as usize] = max;
+    }
+    max
+}
+
+fn flood_fill(
+    colors: &mut [u16; 5041],
+    start_x: usize,
+    start_y: usize,
+    color: u16,
+    walls: &[bool; 5041],
+) {
+    let mut neighbors = Vec::new();
+    neighbors.push((start_x, start_y));
+    let mut visited = HashSet::new();
+    while let Some((x, y)) = neighbors.pop() {
+        visited.insert((x, y));
+        colors[to_coord(x, y)] = color;
+        for (n_x, n_y) in fill_neighbors(x, y, walls) {
+            if !visited.contains(&(n_x, n_y)) {
+                neighbors.push((n_x, n_y));
+            }
+        }
+    }
+}
+
+fn fill_neighbors(x: usize, y: usize, walls: &[bool; 5041]) -> Vec<(usize, usize)> {
+    let mut neighbors = Vec::new();
+    let can_visit = |x, y| {
+        let pos = to_coord(x, y);
+        !walls[pos]
+    };
+    if x > 0 && can_visit(x - 1, y) {
+        neighbors.push((x - 1, y));
+    }
+    if x < WIDTH && can_visit(x + 1, y) {
+        neighbors.push((x + 1, y));
+    }
+    if y > 0 && can_visit(x, y - 1) {
+        neighbors.push((x, y - 1));
+    }
+    if y < HEIGHT && can_visit(x, y + 1) {
+        neighbors.push((x, y + 1));
+    }
+
+    neighbors
 }
 
 fn get_xy(line: &str) -> (usize, usize) {

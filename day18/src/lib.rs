@@ -20,7 +20,6 @@ where
     to_visit.insert((0, (0, 0)));
     let res_p1 = find_path(&walls, &mut costing, &mut to_visit).unwrap();
 
-    let mut pos = 1024;
     let res_p2 = loop {
         let line = &lines.next().unwrap().unwrap();
         let (x, y) = get_xy(&line);
@@ -32,9 +31,7 @@ where
         }
         costing[to_coord(x, y)] = usize::MAX - 1;
         wipe_costing(&mut costing, threshold, &mut to_visit);
-        if let Some(val) = find_path(&walls, &mut costing, &mut to_visit) {
-            pos += 1;
-        } else {
+        if let None = find_path(&walls, &mut costing, &mut to_visit) {
             break format!("{},{}", x, y);
         }
     };

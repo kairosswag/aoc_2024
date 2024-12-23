@@ -96,15 +96,19 @@ where
     let mut height = 0;
     let mut start = None;
     let mut end = None;
+    let mut last_was_linebreak = false;
     while let Ok(val) = reader.read(&mut buff) {
         for idx in 0..val {
+            last_was_linebreak = false;
             match buff[idx] {
                 b'\n' => {
                     if !len_set {
                         len += idx;
                         len_set = true;
                     }
-                    height += 1
+                    height += 1;
+                    last_was_linebreak = true;
+
                 }
                 b'#' => map.push(u16::MAX),
                 b'S' => {
@@ -134,7 +138,9 @@ where
             break;
         }
     }
-    height += 1;
+    if !last_was_linebreak {
+        height += 1;
+    }
     let start = start.unwrap();
     let end = end.unwrap();
     (Maze::new(map, len, height), start, end)
